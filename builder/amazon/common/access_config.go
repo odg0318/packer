@@ -23,6 +23,7 @@ type AccessConfig struct {
 	SkipValidation bool   `mapstructure:"skip_region_validation"`
 	Token          string `mapstructure:"token"`
 	ProfileName    string `mapstructure:"profile"`
+	ProfilePath    string `mapstructure:"profile_path"`
 }
 
 // Config returns a valid aws.Config object for access to AWS services, or
@@ -36,7 +37,7 @@ func (c *AccessConfig) Config() (*aws.Config, error) {
 	}
 	config := aws.NewConfig().WithRegion(region).WithMaxRetries(11)
 	if c.ProfileName != "" {
-		profile, err := NewFromProfile(c.ProfileName)
+		profile, err := NewFromProfile(c.ProfileName, c.ProfilePath)
 		if err != nil {
 			return nil, err
 		}

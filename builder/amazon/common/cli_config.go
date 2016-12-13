@@ -15,6 +15,7 @@ import (
 
 type CLIConfig struct {
 	ProfileName   string
+	ProfilePath   string
 	SourceProfile string
 
 	AssumeRoleInput   *sts.AssumeRoleInput
@@ -25,10 +26,10 @@ type CLIConfig struct {
 }
 
 // Return a new CLIConfig with stored profile settings
-func NewFromProfile(name string) (*CLIConfig, error) {
+func NewFromProfile(name string, profilePath string) (*CLIConfig, error) {
 	c := &CLIConfig{}
 	c.AssumeRoleInput = new(sts.AssumeRoleInput)
-	err := c.Prepare(name)
+	err := c.Prepare(name, profilePath)
 	if err != nil {
 		return nil, err
 	}
@@ -78,10 +79,11 @@ func (c *CLIConfig) CredentialsFromProfile(conf *aws.Config) (*credentials.Crede
 }
 
 // Sets params in the struct based on the file section
-func (c *CLIConfig) Prepare(name string) error {
+func (c *CLIConfig) Prepare(name string, profilePath string) error {
 	var err error
 	c.ProfileName = name
-	c.profileCfg, err = configFromName(c.ProfileName)
+	c.ProfilePath = profilePath
+	c.profileCfg, err = configFromName(c.ProfileName, c.ProfilePath)
 	if err != nil {
 		return err
 	}
@@ -109,8 +111,14 @@ func (c *CLIConfig) getSessionName(rawName string) (string, error) {
 	}
 }
 
-func configFromName(name string) (*ini.Section, error) {
-	filePath := os.Getenv("AWS_CONFIG_FILE")
+func configFromName(name string, profilePath string) (*ini.Section, error) {
+	filePath := ""
+	if len(profilePath) > 0 {
+		filePath = profilePath
+	} else {
+		filePath = os.Getenv("AWS_CONFIG_FILE")
+	}
+
 	if filePath == "" {
 		home, err := homedir.Dir()
 		if err != nil {
